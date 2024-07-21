@@ -170,3 +170,8 @@ dist
 
 # IntelliJ based IDEs
 .idea
+
+
+# ignore yarn.lock
+/secrets/*
+/data

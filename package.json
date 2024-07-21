@@ -1,11 +1,21 @@
 {
-  "name": "sync-photo",
-  "module": "index.ts",
-  "type": "module",
-  "devDependencies": {
-    "bun-types": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  }
+	"name": "sync-photo",
+	"module": "index.ts",
+	"type": "module",
+	"scripts": {
+		"start": "bun run index.ts",
+		"check": "biome check",
+		"format": "biome format --write ."
+	},
+	"dependencies": {
+		"@google-cloud/local-auth": "3.0.1",
+		"googleapis": "140.0.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.8.3",
+		"bun-types": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	}
 }
