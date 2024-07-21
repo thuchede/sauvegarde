@@ -172,6 +172,5 @@ dist
 .idea
 
 
-# ignore yarn.lock
 /secrets/*
-/data
+/data/*

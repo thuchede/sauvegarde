@@ -1,8 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import process from "node:process";
-import { authenticate } from "@google-cloud/local-auth";
-import { drive_v3, google } from "googleapis";
+import {authenticate} from "@google-cloud/local-auth";
+import {google} from "googleapis";
+
+import {program} from 'commander'
 
 // If modifying these scopes, delete token.json.
 const SCOPES = ["https://www.googleapis.com/auth/drive.metadata.readonly"];
@@ -85,12 +87,12 @@ async function listFiles(authClient) {
 		return;
 	}
 
-	console.log("_____________");
-	console.log("Google Drive:");
-	console.log("_____________");
-	files.map((file) => {
-		console.log(`${file.name} (${file.id})`);
-	});
+	// console.log("_____________");
+	// console.log("Google Drive:");
+	// console.log("_____________");
+	// files.map((file) => {
+	// 	console.log(`${file.name} (${file.id})`);
+	// });
 	return files;
 }
 const auth = new google.auth.GoogleAuth({
@@ -101,14 +103,6 @@ const auth = new google.auth.GoogleAuth({
 });
 
 // authorize().then(listFiles).catch(console.error);
-
-const files = fs.readdirSync("/path/to/folder");
-console.log("_____________");
-console.log("SSD:");
-console.log("_____________");
-for (const file of files) {
-	console.log(file);
-}
 
 // let remote_files: { name: string; id: string }[] = [];
 // try {
@@ -125,16 +119,137 @@ for (const file of files) {
 // for (const file of not_exist) {
 // 	console.log(file);
 // }
-let remote_files: { name: string; id: string }[] = [];
-try {
-	remote_files = await auth.getClient().then(listFiles).catch(console.error);
-	console.log("_____________");
-	console.log("Missing:");
-	console.log("_____________");
 
-	const not_exist = files.filter((f) => remote_files.includes(f));
+async function createDirectory(auth, directoryName: string, parentDirectoryId: string) {
 
-	for (const file of not_exist) {
-		console.log(file);
+	const service = google.drive({version: 'v3', auth});
+	const fileMetadata = {
+		name: directoryName,
+		mimeType: 'application/vnd.google-apps.folder',
+		parents: [parentDirectoryId]
+	};
+	const file = await service.files.create({
+		requestBody: fileMetadata,
+		fields: 'id',
+	});
+	console.log('Folder Id:', file.data.id);
+	if (file.data.id) {
+		return file.data.id;
 	}
-} catch {}
+	throw new Error('No folder created')
+}
+
+const ROOT_FOLDER = 'RAW'
+
+async function findRootFolderID(authClient) {
+
+	const drive = google.drive({ version: "v3", auth: authClient });
+	const res = await drive.files.list({
+		pageSize: 1000,
+		q: [
+			`name = '${ROOT_FOLDER}'`,
+			`mimeType = 'application/vnd.google-apps.folder'`,
+		],
+		fields: "nextPageToken, files(id)",
+	});
+
+	const files = res.data.files;
+	if (files.length !== 1) {
+		console.log("More then 1 file found");
+		return -1;
+	}
+	return files[0].id;
+}
+
+async function uploadFile(auth, filename: string, parentFolderId: string) {
+	const service = google.drive({version: 'v3', auth});
+
+	// const mimeType= mime.getType('data/file-1.rw2')
+	// const mimeType2= lookup('data/file-1.rw2')
+	// console.log('mm>', mimeType)
+	// console.log('mT>', mimeType2)
+	const fileMetadata = {
+		name: filename,
+		parents: [parentFolderId],
+	};
+	const media = {
+		body: fs.createReadStream('data/file-1.rw2'),
+		resumable: true
+	};
+
+	const file = await service.files.create({
+		requestBody: fileMetadata,
+		media: media,
+		fields: 'id',
+	});
+	console.log('File Id:', file.data.id);
+	return file.data.id;
+}
+
+function addDotToExtensionIfMissing(value: string) {
+	return value.startsWith('.') ? value : `.${value}`;
+}
+
+
+program
+	.name('sync-photo-util')
+	.description('CLI to upload specific files to Google drive')
+	.version('0.0.0-alpha1')
+	.option('--ext <ext>', 'select file extension to upload', addDotToExtensionIfMissing) // TODO: add support for comma separated or list
+	.argument('<source>', 'folder to scan')
+	.argument('<target>','folder to upload to in Google Drive')
+
+program.parse();
+const options = program.opts();
+const [sourceDir, targetDir] = program.args;
+
+console.log(sourceDir, '>', targetDir)
+console.log('==>', options)
+
+const files = fs.readdirSync(sourceDir)
+	.filter(f => !f.startsWith("."));
+
+const remote_files: { name: string; id: string }[] = [];
+try {
+	const client = await auth.getClient();
+	// remote_files = await listFiles(client);
+	// const remote_files_names = remote_files.map(f => f.name);
+	// console.log("_____________");
+	// console.log("Missing:");
+	// console.log("_____________");
+	//
+	// const not_exist = files.filter((f) => !remote_files_names.includes(f));
+	for (const folder of files) {
+		console.log(folder);
+		const allFiles = fs.readdirSync(path.join(sourceDir, folder))
+		const filteredFiles = options.ext
+			? allFiles.filter(f => !path.extname(path.join(sourceDir,folder, f)).localeCompare(options.ext, undefined, {sensitivity: 'base'}))
+			: allFiles;
+
+		// traverse
+		for (const f of filteredFiles) {
+			console.log('- ', f);
+		}
+	}
+
+
+	// const TEST_FOLDER_CLI = "TEST_FOLDER_CLI"
+	//
+	// console.log("__________");
+	// console.log(`Making dir: ${TEST_FOLDER_CLI}`);
+	// console.log("__________");
+	//
+	// const rootId = await findRootFolderID(client)
+	//
+	// console.log(`ROOT folder '${ROOT_FOLDER}' id is >>`, rootId)
+	//
+	// const createdFolderId = await createDirectory(client, TEST_FOLDER_CLI, rootId )
+	// console.log(`Folder '${TEST_FOLDER_CLI}' created with id:`, createdFolderId)
+
+	// uploadFile(auth, "file-1.RW2", createdFolderId)
+
+
+
+} catch (e) {
+	console.error(e)
+}
