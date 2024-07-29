@@ -19,6 +19,7 @@ This project was created using `bun init` in bun v1.0.1. [Bun](https://bun.sh) i
 - [ ] log file upload error to file 
 - [ ] split log level [err|warn|info]
 - [ ] clean up dry run to a nicer output 
-- [ ] swap commander for clack
-- [ ] allow selecting the folder you want to sync
+- [x] add inquirer checkbox ~~swap commander for clack~~
+- [x] allow selecting the folder you want to sync
 - [ ] add ignore flag (list of folder or regex?)
+- [ ] option to pass credentials file

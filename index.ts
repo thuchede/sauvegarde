@@ -1,5 +1,6 @@
 import path from "node:path";
 import {program} from 'commander'
+import checkbox from '@inquirer/checkbox'
 import {getDryRunGoogleDriveClient, getGoogleDriveClient} from "./drive.ts";
 import {filterListOfFile, getSourceDirContent} from "./files.ts";
 
@@ -13,6 +14,7 @@ program
 	.description('CLI to upload specific files to Google drive')
 	.version('0.0.0-alpha1')
 	.option('--dry-run', 'display folder and number of files to be uploaded')
+	.option('--select', 'display a prompt to select folder to upload')
 	.option('--ext <ext>', 'select file extension to upload', addDotToExtensionIfMissing) // TODO: add support for comma separated or list
 	.argument('<source>', 'folder to scan')
 	.argument('<target>','folder to upload to in Google Drive')
@@ -30,9 +32,16 @@ try {
 	const driveClient = options.dryRun ? getDryRunGoogleDriveClient() : getGoogleDriveClient();
 	const targetRootFolderId = await driveClient.getFolderId(targetDir)
 	const remoteFolders = await driveClient.listFolderContent(targetRootFolderId)
-	const missingFolders = sourceDirContent.filter((localFolderName) => !remoteFolders.includes(localFolderName));
+	let missingFolders = sourceDirContent.filter((localFolderName) => !remoteFolders.includes(localFolderName));
 
 	console.log('missingFolders>', missingFolders);
+	if (options.select) {
+		missingFolders = await checkbox({
+			message: 'Select the folder(s) you want to sync',
+			choices: missingFolders.map(f => ({name: f, value: f})),
+		});
+		console.log('[SELECT] folders:', missingFolders);
+	}
 	for (const folder of missingFolders) {
 		console.log('[START] ', folder);
 		const folderId = await driveClient.createFolder(folder, targetRootFolderId)

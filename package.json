@@ -3,6 +3,9 @@
   "module": "index.ts",
   "version": "0.0.1-alpha.0",
   "type": "module",
+  "bin": {
+    "sauvegarde": "dist/sauvegarde"
+  },
   "scripts": {
     "start": "bun run index.ts",
     "build:cli": "bun build --compile index.ts --outfile=dist/sauvegarde",
@@ -11,9 +14,10 @@
   },
   "dependencies": {
     "@google-cloud/local-auth": "3.0.1",
-    "commander": "^12.1.0",
+    "@googleapis/drive": "8.11.0",
     "@googleapis/oauth2": "1.0.7",
-    "@googleapis/drive": "8.11.0"
+    "@inquirer/checkbox": "^2.4.3",
+    "commander": "^12.1.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.3",
