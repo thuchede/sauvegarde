@@ -14,6 +14,7 @@ program
 	.description('CLI to upload specific files to Google drive')
 	.version('0.0.0-alpha1')
 	.option('--dry-run', 'display folder and number of files to be uploaded')
+	.option('--check', 'display how many folders there is to sync')
 	.option('--select', 'display a prompt to select folder to upload')
 	.option('--ext <ext>', 'select file extension to upload', addDotToExtensionIfMissing) // TODO: add support for comma separated or list
 	.argument('<source>', 'folder to scan')
@@ -35,6 +36,11 @@ try {
 	let missingFolders = sourceDirContent.filter((localFolderName) => !remoteFolders.includes(localFolderName));
 
 	console.log('missingFolders>', missingFolders);
+
+	if (options.check) {
+		console.log(`There is ${missingFolders.length} folder(s) to sync`);
+		process.exit(0);
+	}
 	if (options.select) {
 		missingFolders = await checkbox({
 			message: 'Select the folder(s) you want to sync',
