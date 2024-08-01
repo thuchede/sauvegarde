@@ -5,6 +5,7 @@ import { program } from "commander";
 import { getDryRunGoogleDriveClient, getGoogleDriveClient } from "./drive.ts";
 import { filterListOfFile, getSourceDirContent } from "./files.ts";
 import { error, info, initLogger, success, warn } from "./logger.ts";
+import * as packageJson from "./package.json" with { type: "json" };
 
 function addDotToExtensionIfMissing(value: string) {
 	return value.startsWith(".") ? value : `.${value}`;
@@ -13,7 +14,7 @@ function addDotToExtensionIfMissing(value: string) {
 program
 	.name("sync-photo-util")
 	.description("CLI to upload specific files to Google drive")
-	.version("0.0.0-alpha1")
+	.version(packageJson.version)
 	.option("--dry-run", "display folder and number of files to be uploaded")
 	.option("--log-level <level>", "set specific log level", "info")
 	.option("--check", "display how many folders there is to sync")
