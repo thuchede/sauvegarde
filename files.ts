@@ -6,18 +6,30 @@ import path from "node:path";
  * @param sourceDir the local directory to process
  * @param [showHidden=false] include hidden files in the list
  */
-export function getSourceDirContent(sourceDir: string, showHidden = false): string[] {
-    const dirContent = fs.readdirSync(sourceDir)
-        .filter(f => !f.startsWith(".") || showHidden);
-    return dirContent
+export function getSourceDirContent(
+	sourceDir: string,
+	showHidden = false,
+): string[] {
+	const dirContent = fs
+		.readdirSync(sourceDir)
+		.filter((f) => !f.startsWith(".") || showHidden);
+	return dirContent;
 }
 /**
  * Filter a list of file name based on the extension
  * @param files the list of files to filter
  * @param folder the parent directory of the files
- * @param [ext] file extension to show
+ * @param [extension] file extension to show
  */
-export function filterListOfFile(files: string[], folder: string, extension: string): string[] {
-    return files.filter(file => !path.extname(path.join(folder, file)).localeCompare(extension, undefined, {sensitivity: 'base'}))
+export function filterListOfFile(
+	files: string[],
+	folder: string,
+	extension: string,
+): string[] {
+	return files.filter(
+		(file) =>
+			!path
+				.extname(path.join(folder, file))
+				.localeCompare(extension, undefined, { sensitivity: "base" }),
+	);
 }
-

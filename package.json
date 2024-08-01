@@ -1,29 +1,34 @@
 {
-  "name": "sauvegarde",
-  "module": "index.ts",
-  "version": "0.0.1-alpha.0",
-  "type": "module",
-  "bin": {
-    "sauvegarde": "dist/sauvegarde"
-  },
-  "scripts": {
-    "start": "bun run index.ts",
-    "build:cli": "bun build --compile index.ts --outfile=dist/sauvegarde",
-    "check": "biome check",
-    "format": "biome format --write ."
-  },
-  "dependencies": {
-    "@google-cloud/local-auth": "3.0.1",
-    "@googleapis/drive": "8.11.0",
-    "@googleapis/oauth2": "1.0.7",
-    "@inquirer/checkbox": "^2.4.3",
-    "commander": "^12.1.0"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^1.8.3",
-    "bun-types": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5.0.0"
-  }
+	"name": "sauvegarde",
+	"module": "index.ts",
+	"version": "0.0.1-alpha.0",
+	"type": "module",
+	"bin": {
+		"sauvegarde": "dist/sauvegarde"
+	},
+	"scripts": {
+		"start": "bun run index.ts",
+		"build:cli": "bun build --compile index.ts --outfile=dist/sauvegarde",
+		"check": "biome check",
+		"format": "biome format",
+		"fix": "biome check --write"
+	},
+	"dependencies": {
+		"@google-cloud/local-auth": "3.0.1",
+		"@googleapis/drive": "8.11.0",
+		"@googleapis/oauth2": "1.0.7",
+		"@inquirer/checkbox": "^2.4.3",
+		"@types/cli-progress": "^3.11.6",
+		"chalk": "^5.3.0",
+		"cli-progress": "^3.12.0",
+		"commander": "^12.1.0",
+		"pino": "^9.3.2"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.8.3",
+		"bun-types": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5.0.0"
+	}
 }
