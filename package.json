@@ -9,6 +9,7 @@
 	"scripts": {
 		"start": "bun run index.ts",
 		"build:cli": "bun build --compile index.ts --outfile=dist/sauvegarde",
+		"upload:cli": "npm version && bun build --compile index.ts --outfile=dist/sauvegarde && npm publish",
 		"check": "biome check",
 		"format": "biome format",
 		"fix": "biome check --write",
