@@ -1,11 +1,13 @@
 import path from "node:path";
 import checkbox from "@inquirer/checkbox";
+import { confirm } from '@inquirer/prompts';
 import cliProgress from "cli-progress";
 import { program } from "commander";
 import { getDryRunGoogleDriveClient, getGoogleDriveClient } from "./drive.ts";
 import { filterListOfFile, getSourceDirContent } from "./files.ts";
 import { error, info, initLogger, success, warn } from "./logger.ts";
 import * as packageJson from "./package.json" with { type: "json" };
+import {drive} from "@googleapis/drive";
 
 function addDotToExtensionIfMissing(value: string) {
 	return value.startsWith(".") ? value : `.${value}`;
@@ -19,6 +21,9 @@ program
 	.option("--log-level <level>", "set specific log level", "info")
 	.option("--check", "display how many folders there is to sync")
 	.option("--select", "display a prompt to select folder to upload")
+	.option("--delete", "delete all files for this user (use at your own risk)")
+	.option("--owner", "mandatory if --delete, user to check for deletion, should be the same as the one in the credentials.json")
+	.option("--quota", "use to migrate file owner")
 	.option(
 		"--ext <ext>",
 		"select file extension to upload",
@@ -39,6 +44,57 @@ try {
 	const driveClient = options.dryRun
 		? getDryRunGoogleDriveClient()
 		: getGoogleDriveClient();
+
+
+	// getting current user quota info
+	if (options.quota) {
+		await driveClient.getDriveQuota();
+		process.exit(0);
+	}
+
+	// deleting files
+	try {
+		if (options.delete) {
+			if (!options.owner || options.owner.length === 0 ) {
+				logger.error('No user specified');
+				error("No user specified, please provide the client_email associated with this account.")
+				process.exit(1);
+			}
+			const folderOwned = await driveClient.listFolderContentOwnedBy(options.owner)
+			let folderToDelete: { name: string, id: string }[] = [];
+
+			if (options.select) {
+				folderToDelete = await checkbox({
+					message: "Select the folders you want to delete",
+					choices: folderOwned.map((f) => ({ name: f.name, value: f })),
+				});
+				logger.debug({ selected: folderToDelete }, "manual selection");
+			} else {
+				folderToDelete = folderOwned;
+				logger.debug({ selected: folderToDelete }, "auto selection");
+			}
+			const confirmed = await confirm({ message: `Are you sure you want to delete these ${folderToDelete.length} files?`, default: false });
+			if (!confirmed) {
+				success("Exiting...");
+				process.exit(0);
+			}
+			info('Selected for deletion', folderOwned.length);
+			for (const folder of folderOwned) {
+				info('[DELETING]', folder.name);
+				await driveClient.deleteFilesIn(folder.id)
+				await driveClient.deleteFolder(folder.id)
+				info('[DELETED]', folder.name);
+			}
+			success('[DONE] deleting selection, ');
+			process.exit(0)
+		}
+	} catch (err) {
+		logger.error('[FATAL]', err);
+		error('[FATAL]', err);
+		process.exit(1)
+	}
+
+	// uploading
 	const targetRootFolderId = await driveClient.getFolderId(targetDir);
 	const remoteFolders = await driveClient.listFolderContent(targetRootFolderId);
 	let missingFolders = sourceDirContent.filter(
